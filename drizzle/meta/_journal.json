@@ -8,6 +8,20 @@
       "when": 1772563172817,
       "tag": "0000_unique_spitfire",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772568867635,
+      "tag": "0001_fast_leo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772569457839,
+      "tag": "0002_furry_dagger",
+      "breakpoints": true
     }
   ]
 }

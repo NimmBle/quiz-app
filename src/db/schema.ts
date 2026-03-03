@@ -2,7 +2,7 @@ import { pgTable, serial, text, integer, timestamp, pgEnum, jsonb, boolean } fro
 
 // --- Enums ---
 
-export const quizStatusEnum = pgEnum("quiz_status", ["draft", "active", "finished"]);
+export const quizStatusEnum = pgEnum("quiz_status", ["draft", "lobby", "active", "finished"]);
 
 // --- Tables ---
 
@@ -45,6 +45,7 @@ export const players = pgTable("players", {
     id: serial("id").primaryKey(),
     quizId: integer("quiz_id").notNull().references(() => quizzes.id, { onDelete: "cascade" }),
     teamId: integer("team_id").references(() => teams.id, { onDelete: "set null" }),
+    requestedTeamId: integer("requested_team_id").references(() => teams.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     externalId: text("external_id").notNull(),
     isCaptain: boolean("is_captain").notNull().default(false),
