@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: quiz-platform-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+
+    environment:
+      POSTGRES_USER: quiz
+      POSTGRES_PASSWORD: quiz_dev_password
+      POSTGRES_DB: quiz_platform
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
