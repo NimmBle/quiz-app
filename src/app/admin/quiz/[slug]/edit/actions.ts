@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { writeFile } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { broadcastToQuiz } from "@/lib/sse";
 
 export async function addQuestion(quizId: number) {
     try {
@@ -95,6 +96,13 @@ export async function deleteQuestion(questionId: number) {
 export async function updateQuizStatus(quizId: number, status: "draft" | "lobby" | "active" | "finished") {
     try {
         await db.update(quizzes).set({ status }).where(eq(quizzes.id, quizId));
+
+        if (status === "active") {
+            broadcastToQuiz(quizId, "quiz_started", {});
+        } else if (status === "finished") {
+            broadcastToQuiz(quizId, "quiz_finished", {});
+        }
+
         revalidatePath("/admin/dashboard");
         return { success: true };
     } catch (error) {

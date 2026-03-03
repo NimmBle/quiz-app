@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { joinQuizAsGuest } from "./actions";
+import AzMogaTitle from "@/components/AzMogaTitle";
 
 interface Quiz {
     id: number;
@@ -19,9 +20,8 @@ export default function ClientLogin({ quiz }: { quiz: Quiz }) {
                 {/* Decorative Top Accent */}
                 <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-brand-red via-brand-blue to-brand-green" />
 
-                <h1 className="text-3xl font-bold mb-2 mt-4 text-gray-900">
-                    <span className="text-brand-red">Аз</span>{" "}
-                    <span className="text-brand-blue">мога</span>
+                <h1 className="mb-2 mt-4 flex justify-center">
+                    <AzMogaTitle />
                 </h1>
                 <h2 className="text-xl font-bold text-gray-800 mb-1">{quiz.name}</h2>
                 <p className="text-gray-500 text-sm mb-8">

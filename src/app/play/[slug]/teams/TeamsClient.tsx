@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTeam, requestToJoin, cancelJoinRequest, approvePlayer, rejectPlayer, refreshPlayerSession, leaveTeam } from "./actions";
 import { Users, Shield, Clock, Check, X, Plus, LogOut } from "lucide-react";
+import AzMogaTitle from "@/components/AzMogaTitle";
 
 type TeamWithStats = {
     id: number;
@@ -52,6 +53,13 @@ export default function TeamsClient({ quiz, me, initialTeams }: { quiz: { id: nu
         eventSource.addEventListener("player_approved", handleUpdate);
         eventSource.addEventListener("player_rejected", handleUpdate);
         eventSource.addEventListener("player_left", handleUpdate);
+        eventSource.addEventListener("quiz_started", () => {
+            if (me.teamId) {
+                router.push(`/play/${quiz.slug}/game`);
+            } else {
+                router.refresh();
+            }
+        });
 
         return () => {
             eventSource.close();
@@ -109,7 +117,10 @@ export default function TeamsClient({ quiz, me, initialTeams }: { quiz: { id: nu
 
         return (
             <div className="min-h-screen bg-brand-dark p-4 flex flex-col items-center">
-                <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden mt-8">
+                <div className="mt-8 mb-4 scale-75 origin-center">
+                    <AzMogaTitle />
+                </div>
+                <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden">
                     <div className="bg-brand-blue p-6 text-white text-center relative">
                         <h2 className="text-sm font-bold opacity-80 uppercase tracking-wider mb-1">Вашият Отбор</h2>
                         <h1 className="text-3xl font-bold">{myTeam?.name}</h1>
@@ -200,6 +211,9 @@ export default function TeamsClient({ quiz, me, initialTeams }: { quiz: { id: nu
         const requestedTeam = initialTeams.find(t => t.id === me.requestedTeamId);
         return (
             <div className="min-h-screen bg-brand-dark p-4 flex flex-col items-center justify-center">
+                <div className="scale-75 mb-6 origin-center">
+                    <AzMogaTitle />
+                </div>
                 <div className="bg-white p-8 rounded-3xl max-w-md w-full text-center shadow-xl">
                     <Clock className="w-16 h-16 text-brand-orange mx-auto mb-4 animate-pulse" />
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Изчакване на одобрение</h2>
@@ -222,7 +236,10 @@ export default function TeamsClient({ quiz, me, initialTeams }: { quiz: { id: nu
     // VIEW C: Unassigned, selecting or creating a team
     return (
         <div className="min-h-screen bg-brand-dark p-4 flex flex-col items-center">
-            <div className="w-full max-w-4xl mt-8">
+            <div className="w-full max-w-4xl mt-4">
+                <div className="scale-75 origin-center flex justify-center mb-6">
+                    <AzMogaTitle />
+                </div>
                 <h1 className="text-3xl font-bold text-white mb-2 text-center">Избор на Отбор</h1>
                 <p className="text-gray-300 text-center mb-8">Създайте нов отбор или изпратете заявка за присъединяване.</p>
 

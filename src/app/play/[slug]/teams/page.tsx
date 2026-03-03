@@ -37,6 +37,10 @@ export default async function TeamsPage({ params }: { params: Promise<{ slug: st
         redirect(`/play/${slug}`);
     }
 
+    if (quiz.status === "active" && me.teamId) {
+        redirect(`/play/${slug}/game`);
+    }
+
     // 2. Fetch all teams
     const allTeams = await db.query.teams.findMany({
         where: eq(teams.quizId, quiz.id),

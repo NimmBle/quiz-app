@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Edit, Copy } from "lucide-react";
+import { Plus, Trash2, Edit, Copy, Activity } from "lucide-react";
 import Link from "next/link";
 import { createQuiz, deleteQuiz, cloneQuiz } from "./actions";
 
@@ -125,14 +125,21 @@ export default function AdminDashboard({ quizzes }: { quizzes: Quiz[] }) {
                                     </p>
                                 </div>
 
-                                {/* Card Actions */}
                                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                    <Link
-                                        href={`/admin/quiz/${quiz.slug}/edit`}
-                                        className="flex items-center gap-1 text-brand-blue hover:text-blue-800 font-bold text-sm px-2 py-1 rounded hover:bg-blue-50 transition"
-                                    >
-                                        <Edit className="w-4 h-4" /> Редакция
-                                    </Link>
+                                    <div className="flex gap-2">
+                                        <Link
+                                            href={`/admin/quiz/${quiz.slug}/edit`}
+                                            className="flex items-center gap-1 text-brand-blue hover:text-blue-800 font-bold text-sm px-2 py-1 rounded hover:bg-blue-50 transition"
+                                        >
+                                            <Edit className="w-4 h-4" /> Редакция
+                                        </Link>
+                                        <Link
+                                            href={`/admin/quiz/${quiz.slug}/live`}
+                                            className="flex items-center gap-1 text-brand-green hover:text-green-800 font-bold text-sm px-2 py-1 rounded hover:bg-green-50 transition"
+                                        >
+                                            <Activity className="w-4 h-4" /> На живо
+                                        </Link>
+                                    </div>
 
                                     <div className="flex gap-1">
                                         <button
