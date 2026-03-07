@@ -1,4 +1,4 @@
-import { getQuizzes } from "./actions";
+import { getQuizzes, getDashboardStats } from "./actions";
 import DashboardClient from "./DashboardClient";
 
 export const metadata = {
@@ -7,5 +7,6 @@ export const metadata = {
 
 export default async function DashboardPage() {
     const quizzes = await getQuizzes();
-    return <DashboardClient quizzes={quizzes} />;
+    const stats = await getDashboardStats();
+    return <DashboardClient quizzes={quizzes} stats={stats} />;
 }

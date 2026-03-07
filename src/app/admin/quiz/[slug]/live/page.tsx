@@ -3,6 +3,7 @@ import { quizzes, questions, teams, players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
+import { getLiveClientCount } from "@/lib/sse";
 import LiveClient from "./LiveClient";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -27,7 +28,6 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
     if (!quiz) notFound();
 
     // 3. Status Guard 
-    // Usually we only monitor active/finished quizzes, but we can allow lobby too to see people join.
     if (quiz.status === "draft") {
         redirect(`/admin/quiz/${slug}/edit`);
     }
@@ -38,12 +38,10 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
         orderBy: (q, { asc }) => [asc(q.position)],
     });
 
-    // 5. Fetch Database View of the Leaderboard
-    // Sorting Logic: 
-    // 1. Most questions answered correctly (determined by progress entries) / currentQuestion
-    // 2. Fastest to reach that point (MAX(recordedAt) from progress)
+    // 5. Fetch Initial Live Client Count
+    const initialLiveCount = getLiveClientCount(quiz.id);
 
-    // We will pull the raw data and let JS sort it cleanly.
+    // 6. Fetch Database View of the Leaderboard
     const allTeamsRaw = await db.query.teams.findMany({
         where: eq(teams.quizId, quiz.id),
     });
@@ -56,13 +54,11 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
         orderBy: (p, { asc }) => [asc(p.recordedAt)],
     });
 
-    // 6. Build the Leaderboard Array
     const teamsData = allTeamsRaw.map(t => {
         const teamMembers = allPlayers.filter(p => p.teamId === t.id);
         const teamProgress = allProgress.filter(p => p.teamId === t.id);
 
-        // Find the last recorded time for this team answering a question
-        let lastAnswerTime = new Date(0); // Epoch 0 if they haven't answered anything
+        let lastAnswerTime = new Date(0);
         if (teamProgress.length > 0) {
             lastAnswerTime = teamProgress[teamProgress.length - 1].recordedAt;
         }
@@ -74,17 +70,16 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
             currentQuestion: t.currentQuestion,
             hintsUsed: t.hintsUsed,
             isFinished: !!t.finishTime,
-            score: teamProgress.length, // Number of correct answers = Score
+            score: teamProgress.length,
             lastAnswerTime: lastAnswerTime.getTime(),
         };
     });
 
-    // Sort: Score DESC, then Time ASC (lower time = faster)
     teamsData.sort((a, b) => {
         if (b.score !== a.score) {
-            return b.score - a.score; // Higher score first
+            return b.score - a.score;
         }
-        return a.lastAnswerTime - b.lastAnswerTime; // Faster time first
+        return a.lastAnswerTime - b.lastAnswerTime;
     });
 
     return (
@@ -92,6 +87,7 @@ export default async function LivePage({ params }: { params: Promise<{ slug: str
             quiz={quiz}
             questions={allQuestions.map(q => ({ id: q.id, position: q.position, text: q.text }))}
             initialTeams={teamsData}
+            initialLiveCount={initialLiveCount}
         />
     );
 }

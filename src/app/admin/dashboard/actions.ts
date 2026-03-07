@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { quizzes, questions } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { quizzes, questions, teams, players } from "@/db/schema";
+import { eq, desc, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // Generate a URL-friendly slug
@@ -98,4 +98,22 @@ export async function getQuizzes() {
     return await db.query.quizzes.findMany({
         orderBy: [desc(quizzes.createdAt)],
     });
+}
+
+export async function getDashboardStats() {
+    const [quizCount] = await db.select({ count: count() }).from(quizzes);
+    const [teamCount] = await db.select({ count: count() }).from(teams);
+    const [playerCount] = await db.select({ count: count() }).from(players);
+
+    const [activeQuizzes] = await db
+        .select({ count: count() })
+        .from(quizzes)
+        .where(eq(quizzes.status, "active"));
+
+    return {
+        totalQuizzes: quizCount.count,
+        totalTeams: teamCount.count,
+        totalPlayers: playerCount.count,
+        activeQuizzes: activeQuizzes.count,
+    };
 }

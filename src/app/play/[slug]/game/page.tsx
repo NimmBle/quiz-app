@@ -14,9 +14,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
     const slug = (await params).slug;
 
     // 1. Fetch Quiz
-    const quiz = await db.query.quizzes.findFirst({
-        where: eq(quizzes.slug, slug),
-    });
+    const [quiz] = await db.select().from(quizzes).where(eq(quizzes.slug, slug)).limit(1);
 
     if (!quiz) notFound();
 
@@ -26,21 +24,27 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         redirect(`/play/${slug}`);
     }
 
-    const me = await db.query.players.findFirst({
-        where: eq(players.id, session.playerId),
-    });
+    const [me] = await db.select().from(players).where(eq(players.id, session.playerId)).limit(1);
 
     if (!me || me.teamId !== session.teamId) {
         redirect(`/play/${slug}`);
     }
 
-    const team = await db.query.teams.findFirst({
-        where: eq(teams.id, session.teamId),
-    });
+    const [teamDoc] = await db.select().from(teams).where(eq(teams.id, session.teamId)).limit(1);
 
-    if (!team) {
+    if (!teamDoc) {
         redirect(`/play/${slug}`);
     }
+
+    const teamMembers = await db.select().from(players).where(eq(players.teamId, teamDoc.id));
+
+    const joinRequests = await db.select().from(players).where(eq(players.requestedTeamId, teamDoc.id));
+
+    const team = {
+        ...teamDoc,
+        members: teamMembers.map(m => ({ id: m.id, name: m.name })),
+        joinRequests: joinRequests.map(r => ({ id: r.id, name: r.name }))
+    };
 
     // 3. Quiz State Guards
     if (quiz.status === "draft" || quiz.status === "lobby") {
@@ -48,21 +52,17 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
     }
 
     // 4. Determine progression and total questions
-    const allQuestions = await db.query.questions.findMany({
-        where: eq(questions.quizId, quiz.id),
-        orderBy: (q, { asc }) => [asc(q.position)],
-    });
+    const allQuestions = await db.select()
+        .from(questions)
+        .where(eq(questions.quizId, quiz.id))
+        .orderBy(questions.position);
 
     const isFinished = !!team.finishTime || quiz.status === "finished";
 
     // Find current question based on team's position
     const currentQuestionDoc = allQuestions.find(q => q.position === team.currentQuestion);
 
-    // If no current question found and not explicitly marked finished (edge case fallback),
-    // we consider them finished.
     if (!currentQuestionDoc && !isFinished) {
-        // Technically team finishTime should be set by the action, 
-        // but this safely guards rendering out-of-bounds questions.
         return <GameClient quiz={quiz} me={me} team={team} isFinished={true} totalQuestions={allQuestions.length} />;
     }
 
@@ -70,19 +70,19 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         return <GameClient quiz={quiz} me={me} team={team} isFinished={true} totalQuestions={allQuestions.length} />;
     }
 
-    // 5. Build Safe Question Payload (No Answers Array!)
+    // 5. Build Safe Question Payload
     const safeQuestion = {
         id: currentQuestionDoc!.id,
         position: currentQuestionDoc!.position,
         text: currentQuestionDoc!.text,
         imageUrl: currentQuestionDoc!.imageUrl,
-        // We only send the hint if they already unlocked it.
     };
 
     // 6. Check if hint is already unlocked
-    const unlockedHint = await db.query.usedHints.findFirst({
-        where: and(eq(usedHints.teamId, team.id), eq(usedHints.questionId, safeQuestion.id))
-    });
+    const [unlockedHint] = await db.select()
+        .from(usedHints)
+        .where(and(eq(usedHints.teamId, team.id), eq(usedHints.questionId, safeQuestion.id)))
+        .limit(1);
 
     let initialHint = null;
     if (unlockedHint) {

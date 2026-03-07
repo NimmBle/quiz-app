@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { quizzes, teams, players } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { getPlayerSession } from "@/lib/auth";
 import TeamsClient from "./TeamsClient";
@@ -13,25 +13,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function TeamsPage({ params }: { params: Promise<{ slug: string }> }) {
     const slug = (await params).slug;
 
-    const quiz = await db.query.quizzes.findFirst({
-        where: eq(quizzes.slug, slug),
-    });
+    const [quiz] = await db.select().from(quizzes).where(eq(quizzes.slug, slug)).limit(1);
 
     if (!quiz) notFound();
 
     if (quiz.status === "draft") {
-        redirect(`/play/${slug}`); // Push back to gate
+        redirect(`/play/${slug}`);
     }
 
     const session = await getPlayerSession(quiz.id);
     if (!session) {
-        redirect(`/play/${slug}`); // Not logged in
+        redirect(`/play/${slug}`);
     }
 
-    // 1. Fetch current player database state
-    const me = await db.query.players.findFirst({
-        where: eq(players.id, session.playerId),
-    });
+    const [me] = await db.select().from(players).where(eq(players.id, session.playerId)).limit(1);
 
     if (!me) {
         redirect(`/play/${slug}`);
@@ -41,18 +36,10 @@ export default async function TeamsPage({ params }: { params: Promise<{ slug: st
         redirect(`/play/${slug}/game`);
     }
 
-    // 2. Fetch all teams
-    const allTeams = await db.query.teams.findMany({
-        where: eq(teams.quizId, quiz.id),
-        orderBy: (t, { asc }) => [asc(t.id)],
-    });
+    const allTeams = await db.select().from(teams).where(eq(teams.quizId, quiz.id)).orderBy(teams.id);
 
-    // 3. Fetch all assigned players
-    const allPlayers = await db.query.players.findMany({
-        where: eq(players.quizId, quiz.id),
-    });
+    const allPlayers = await db.select().from(players).where(eq(players.quizId, quiz.id));
 
-    // 4. Transform into easy-to-consume props
     const teamsData = allTeams.map(t => {
         const members = allPlayers.filter(p => p.teamId === t.id);
         const requests = allPlayers.filter(p => p.requestedTeamId === t.id);

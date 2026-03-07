@@ -19,27 +19,22 @@ export async function joinQuizAsGuest(quizId: number, quizSlug: string, prevStat
     }
 
     try {
-        // Check name uniqueness in the current quiz
-        const existingPlayer = await db.query.players.findFirst({
-            where: and(eq(players.quizId, quizId), eq(players.name, name.trim())),
-        });
+        const [existingPlayer] = await db.select().from(players).where(and(eq(players.quizId, quizId), eq(players.name, name.trim()))).limit(1);
 
         if (existingPlayer) {
             return { error: "Това име вече е заето в този куиз. Моля, изберете друго." };
         }
 
-        // Insert player
         const [newPlayer] = await db.insert(players).values({
             quizId,
             name: name.trim(),
             externalId: externalId.trim(),
         }).returning();
 
-        // Create session (Cookie)
         await createPlayerSession({
             playerId: newPlayer.id,
             quizId: newPlayer.quizId,
-            teamId: null, // Not in a team yet
+            teamId: null,
             isCaptain: false,
         });
 
@@ -48,6 +43,5 @@ export async function joinQuizAsGuest(quizId: number, quizSlug: string, prevStat
         return { error: "Грешка при профила. Опитайте отново." };
     }
 
-    // Redirect to the Team Lobby / Selection screen
     redirect(`/play/${quizSlug}/teams`);
 }

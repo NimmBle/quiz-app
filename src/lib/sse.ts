@@ -10,13 +10,14 @@ const globalForSse = globalThis as unknown as {
 };
 
 const clients = globalForSse.sseClients || new Map<number, Set<SSEClient>>();
-if (process.env.NODE_ENV !== "production") globalForSse.sseClients = clients;
+globalForSse.sseClients = clients;
 
 export function addSSEClient(quizId: number, client: SSEClient) {
     if (!clients.has(quizId)) {
         clients.set(quizId, new Set());
     }
     clients.get(quizId)!.add(client);
+    broadcastPresenceUpdate(quizId);
 }
 
 export function removeSSEClient(quizId: number, clientId: string) {
@@ -25,10 +26,20 @@ export function removeSSEClient(quizId: number, clientId: string) {
         for (const client of quizClients) {
             if (client.id === clientId) {
                 quizClients.delete(client);
+                broadcastPresenceUpdate(quizId);
                 break;
             }
         }
     }
+}
+
+export function getLiveClientCount(quizId: number) {
+    return clients.get(quizId)?.size || 0;
+}
+
+function broadcastPresenceUpdate(quizId: number) {
+    const count = getLiveClientCount(quizId);
+    broadcastToQuiz(quizId, "presence_update", { count });
 }
 
 export function broadcastToQuiz(quizId: number, eventName: string, data: unknown) {

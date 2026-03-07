@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { questions, quizzes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { broadcastToQuiz } from "@/lib/sse";
@@ -57,11 +57,15 @@ export async function updateQuestion(questionId: number, formData: FormData) {
             const ext = path.extname(imageFile.name);
             // Generate unique name
             const filename = `${crypto.randomBytes(16).toString("hex")}${ext}`;
-            const uploadDir = path.join(process.cwd(), "public", "uploads");
+            const uploadDir = path.join(process.cwd(), "data", "uploads");
+
+            // Ensure the directory exists (important for the mounted volume)
+            await mkdir(uploadDir, { recursive: true }).catch(() => { });
+
             const filePath = path.join(uploadDir, filename);
 
             await writeFile(filePath, buffer);
-            imageUrl = `/uploads/${filename}`;
+            imageUrl = `/api/uploads/${filename}`;
         }
 
         const updateData: Partial<typeof questions.$inferInsert> = {

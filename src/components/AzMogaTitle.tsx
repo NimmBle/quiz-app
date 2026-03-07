@@ -1,8 +1,8 @@
 import React from "react";
 
-export default function AzMogaTitle() {
+export default function AzMogaTitle({ className = "text-[26px]" }: { className?: string }) {
     return (
-        <span className="font-black uppercase text-[26px] mx-auto text-transparent bg-clip-text animate-[logo_10s_linear_infinite]"
+        <span className={`font-black uppercase text-transparent bg-clip-text animate-[logo_10s_linear_infinite] ${className}`}
             style={{
                 backgroundImage: "url(https://cdn.az-moga.bg/assets/all/logo-bg.jpg)",
                 backgroundSize: "50%",

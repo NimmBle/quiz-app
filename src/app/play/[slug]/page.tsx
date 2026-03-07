@@ -51,11 +51,11 @@ export default async function PlayerLoginPage({ params }: { params: Promise<{ sl
     const session = await getPlayerSession(quiz.id);
     if (session) {
         // If they already have a session for THIS exact quiz, route them strictly forward.
-        // If they don't have a team yet, redirect to /teams. If they have a team, redirect to /lobby
+        // If they don't have a team yet, redirect to /teams. If they have a team, redirect to /teams (waiting area)
         if (!session.teamId) {
             redirect(`/play/${quiz.slug}/teams`);
         } else {
-            redirect(`/play/${quiz.slug}/lobby`);
+            redirect(`/play/${quiz.slug}/teams`);
         }
     }
 

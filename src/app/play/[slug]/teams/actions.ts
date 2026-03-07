@@ -2,46 +2,41 @@
 
 import { db } from "@/db";
 import { teams, players } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import { getPlayerSession, createPlayerSession } from "@/lib/auth";
 import { broadcastToQuiz } from "@/lib/sse";
+import { revalidatePath } from "next/cache";
 
 export async function createTeam(quizId: number, teamName: string) {
     const session = await getPlayerSession(quizId);
     if (!session) return { error: "Невалидна сесия" };
 
     try {
-        // 1. Check if name is taken
-        const existingTeam = await db.query.teams.findFirst({
-            where: and(eq(teams.quizId, quizId), eq(teams.name, teamName.trim())),
-        });
+        const [existingTeam] = await db.select().from(teams).where(and(eq(teams.quizId, quizId), eq(teams.name, teamName.trim()))).limit(1);
 
         if (existingTeam) {
             return { error: "Отбор с това име вече съществува." };
         }
 
-        // 2. Create the team
         const [newTeam] = await db.insert(teams).values({
             quizId,
             name: teamName.trim(),
             captainPlayerId: session.playerId,
         }).returning();
 
-        // 3. Update the player
         await db.update(players).set({
             teamId: newTeam.id,
             isCaptain: true,
             requestedTeamId: null,
         }).where(eq(players.id, session.playerId));
 
-        // 4. Update the session cookie
         await createPlayerSession({
             ...session,
             teamId: newTeam.id,
             isCaptain: true,
         });
 
-        // 5. Broadcast so others see the new team
+        revalidatePath(`/play/[slug]/teams`, "page");
         broadcastToQuiz(quizId, "team_created", { teamId: newTeam.id });
 
         return { success: true };
@@ -56,11 +51,11 @@ export async function requestToJoin(quizId: number, teamId: number) {
     if (!session) return { error: "Невалидна сесия" };
 
     try {
-        // Determine player's current limits
         await db.update(players)
             .set({ requestedTeamId: teamId })
             .where(eq(players.id, session.playerId));
 
+        revalidatePath(`/play/[slug]/teams`, "page");
         broadcastToQuiz(quizId, "join_requested", { teamId });
         return { success: true };
     } catch {
@@ -74,6 +69,7 @@ export async function cancelJoinRequest(quizId: number) {
 
     try {
         await db.update(players).set({ requestedTeamId: null }).where(eq(players.id, session.playerId));
+        revalidatePath(`/play/[slug]/teams`, "page");
         broadcastToQuiz(quizId, "join_cancelled", { playerId: session.playerId });
         return { success: true };
     } catch {
@@ -88,20 +84,17 @@ export async function approvePlayer(quizId: number, playerId: number) {
     }
 
     try {
-        // Check team size (max 5)
-        const currentMembers = await db.query.players.findMany({
-            where: eq(players.teamId, session.teamId),
-        });
+        const currentMembers = await db.select().from(players).where(eq(players.teamId, session.teamId));
 
         if (currentMembers.length >= 5) {
             return { error: "Отборът е пълен (макс. 5 човека)." };
         }
 
-        // Update the player
         await db.update(players)
             .set({ teamId: session.teamId, requestedTeamId: null })
             .where(eq(players.id, playerId));
 
+        revalidatePath(`/play/[slug]/teams`, "page");
         broadcastToQuiz(quizId, "player_approved", { playerId, teamId: session.teamId });
         return { success: true };
     } catch {
@@ -120,6 +113,7 @@ export async function rejectPlayer(quizId: number, playerId: number) {
             .set({ requestedTeamId: null })
             .where(eq(players.id, playerId));
 
+        revalidatePath(`/play/[slug]/teams`, "page");
         broadcastToQuiz(quizId, "player_rejected", { playerId });
         return { success: true };
     } catch {
@@ -128,14 +122,10 @@ export async function rejectPlayer(quizId: number, playerId: number) {
 }
 
 export async function refreshPlayerSession(quizId: number) {
-    // A utility for a client to call when they receive SSE that they were approved,
-    // prompting the server to mint a new cookie with their updated teamId.
     const session = await getPlayerSession(quizId);
     if (!session) return { success: false };
 
-    const player = await db.query.players.findFirst({
-        where: eq(players.id, session.playerId),
-    });
+    const [player] = await db.select().from(players).where(eq(players.id, session.playerId)).limit(1);
 
     if (player && (player.teamId !== session.teamId || player.isCaptain !== session.isCaptain)) {
         await createPlayerSession({
@@ -155,18 +145,13 @@ export async function leaveTeam(quizId: number) {
     try {
         const teamId = session.teamId;
 
-        // 1. Update the leaving player
         await db.update(players).set({
             teamId: null,
             isCaptain: false,
         }).where(eq(players.id, session.playerId));
 
-        // 2. Handle Captaincy Reassignment
         if (session.isCaptain) {
-            const remainingMembers = await db.query.players.findMany({
-                where: eq(players.teamId, teamId),
-                orderBy: (p, { asc }) => [asc(p.id)],
-            });
+            const remainingMembers = await db.select().from(players).where(eq(players.teamId, teamId)).orderBy(players.id);
 
             if (remainingMembers.length > 0) {
                 const newCaptain = remainingMembers[0];
@@ -177,13 +162,13 @@ export async function leaveTeam(quizId: number) {
             }
         }
 
-        // 3. Update session cookie
         await createPlayerSession({
             ...session,
             teamId: null,
             isCaptain: false,
         });
 
+        revalidatePath(`/play/[slug]/teams`, "page");
         broadcastToQuiz(quizId, "player_left", { teamId, playerId: session.playerId });
         return { success: true };
     } catch {
