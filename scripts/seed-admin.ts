@@ -26,7 +26,10 @@ async function main() {
     }
 
     // 2. Hash default password and create admin
-    const defaultPassword = "[REDACTED]";
+    const defaultPassword = process.env.ADMIN_SEED_PASSWORD;
+    if (!defaultPassword) {
+        throw new Error("ADMIN_SEED_PASSWORD is missing in .env.local");
+    }
     const passwordHash = await bcrypt.hash(defaultPassword, 10);
 
     await db.insert(schema.admin).values({
