@@ -1,1 +1,0 @@
-ALTER TYPE "public"."quiz_status" ADD VALUE 'lobby' BEFORE 'active';

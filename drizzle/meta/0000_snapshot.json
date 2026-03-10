@@ -1,12 +1,12 @@
 {
-  "id": "77522045-cf22-46a6-bb5c-bcb728bff595",
+  "id": "2715e3fe-7353-4499-9a4e-c1b3052e4b93",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.admin": {
+    "quizzer.admin": {
       "name": "admin",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -29,9 +29,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.players": {
+    "quizzer.players": {
       "name": "players",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -47,6 +47,12 @@
         },
         "team_id": {
           "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_team_id": {
+          "name": "requested_team_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -77,6 +83,7 @@
           "name": "players_quiz_id_quizzes_id_fk",
           "tableFrom": "players",
           "tableTo": "quizzes",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "quiz_id"
           ],
@@ -90,8 +97,23 @@
           "name": "players_team_id_teams_id_fk",
           "tableFrom": "players",
           "tableTo": "teams",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "players_requested_team_id_teams_id_fk": {
+          "name": "players_requested_team_id_teams_id_fk",
+          "tableFrom": "players",
+          "tableTo": "teams",
+          "schemaTo": "quizzer",
+          "columnsFrom": [
+            "requested_team_id"
           ],
           "columnsTo": [
             "id"
@@ -106,9 +128,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.progress": {
+    "quizzer.progress": {
       "name": "progress",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -142,6 +164,7 @@
           "name": "progress_team_id_teams_id_fk",
           "tableFrom": "progress",
           "tableTo": "teams",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "team_id"
           ],
@@ -158,9 +181,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.questions": {
+    "quizzer.questions": {
       "name": "questions",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -211,6 +234,7 @@
           "name": "questions_quiz_id_quizzes_id_fk",
           "tableFrom": "questions",
           "tableTo": "quizzes",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "quiz_id"
           ],
@@ -227,9 +251,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.quizzes": {
+    "quizzer.quizzes": {
       "name": "quizzes",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -252,7 +276,7 @@
         "status": {
           "name": "status",
           "type": "quiz_status",
-          "typeSchema": "public",
+          "typeSchema": "quizzer",
           "primaryKey": false,
           "notNull": true,
           "default": "'draft'"
@@ -288,9 +312,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.team_answers": {
+    "quizzer.team_answers": {
       "name": "team_answers",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -330,6 +354,7 @@
           "name": "team_answers_team_id_teams_id_fk",
           "tableFrom": "team_answers",
           "tableTo": "teams",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "team_id"
           ],
@@ -343,6 +368,7 @@
           "name": "team_answers_question_id_questions_id_fk",
           "tableFrom": "team_answers",
           "tableTo": "questions",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "question_id"
           ],
@@ -359,9 +385,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.teams": {
+    "quizzer.teams": {
       "name": "teams",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -420,6 +446,7 @@
           "name": "teams_quiz_id_quizzes_id_fk",
           "tableFrom": "teams",
           "tableTo": "quizzes",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "quiz_id"
           ],
@@ -436,9 +463,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.used_hints": {
+    "quizzer.used_hints": {
       "name": "used_hints",
-      "schema": "",
+      "schema": "quizzer",
       "columns": {
         "id": {
           "name": "id",
@@ -465,6 +492,7 @@
           "name": "used_hints_team_id_teams_id_fk",
           "tableFrom": "used_hints",
           "tableTo": "teams",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "team_id"
           ],
@@ -478,6 +506,7 @@
           "name": "used_hints_question_id_questions_id_fk",
           "tableFrom": "used_hints",
           "tableTo": "questions",
+          "schemaTo": "quizzer",
           "columnsFrom": [
             "question_id"
           ],
@@ -496,17 +525,20 @@
     }
   },
   "enums": {
-    "public.quiz_status": {
+    "quizzer.quiz_status": {
       "name": "quiz_status",
-      "schema": "public",
+      "schema": "quizzer",
       "values": [
         "draft",
+        "lobby",
         "active",
         "finished"
       ]
     }
   },
-  "schemas": {},
+  "schemas": {
+    "quizzer": "quizzer"
+  },
   "sequences": {},
   "roles": {},
   "policies": {},
