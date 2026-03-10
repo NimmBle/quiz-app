@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 const secretKey = process.env.JWT_SECRET || "default_super_secret_key_for_quiz";
 const key = new TextEncoder().encode(secretKey);
 
-export async function hashPassword(password: string) {
+async function hashPassword(password: string) {
     return await bcrypt.hash(password, 10);
 }
 
@@ -53,7 +53,7 @@ export async function destroyAdminSession() {
 
 // --- Player Auth ---
 
-export type PlayerSessionPayload = {
+type PlayerSessionPayload = {
     playerId: number;
     quizId: number;
     teamId: number | null;
@@ -91,7 +91,7 @@ export async function getPlayerSession(quizId: number): Promise<PlayerSessionPay
     }
 }
 
-export async function destroyPlayerSession(quizId: number) {
+async function destroyPlayerSession(quizId: number) {
     const cookieStore = await cookies();
     cookieStore.delete(`player_session_${quizId}`);
 }
