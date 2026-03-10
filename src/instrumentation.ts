@@ -1,4 +1,9 @@
 export async function register() {
+    // Do not run database migrations or seeding during the build phase
+    if (process.env.npm_lifecycle_event === "build") {
+        return;
+    }
+
     if (process.env.NEXT_RUNTIME === "nodejs") {
         console.log("Checking database seed status...");
 
