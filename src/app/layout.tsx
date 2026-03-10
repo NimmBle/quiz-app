@@ -11,7 +11,9 @@ const sofiaSans = Sofia_Sans({
 export const metadata: Metadata = {
   title: "Аз мога — тук и сега",
   description: 'Квиз платформа на „Аз мога — тук и сега"',
-
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
