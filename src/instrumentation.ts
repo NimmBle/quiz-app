@@ -1,5 +1,3 @@
-import bcrypt from "bcryptjs";
-
 export async function register() {
     if (process.env.NEXT_RUNTIME === "nodejs") {
         console.log("Checking database seed status...");
@@ -8,6 +6,7 @@ export async function register() {
         const { db } = await import("./db");
         const schema = await import("./db/schema");
         const { migrate } = await import("drizzle-orm/postgres-js/migrator");
+        const bcrypt = (await import("bcryptjs")).default;
 
         try {
             console.log("Applying database migrations...");
